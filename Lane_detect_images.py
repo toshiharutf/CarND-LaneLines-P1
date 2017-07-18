@@ -146,8 +146,8 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     
     fit_line_image = np.copy(img)*0
     
-    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(255,0,0),20)
-    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(255,0,0),20)
+    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(255,0,0),10)
+    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(255,0,0),10)
 
     return  weighted_img(image,fit_line_image,0.8,1,0)
 
@@ -203,6 +203,7 @@ for file in os.listdir(imagesFolder):
         plt.figure()
         plt.imshow(output_img)
         
+        output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
         cv2.imwrite(outputFolder+"/"+file+'-output.jpg',output_img)
     
     
