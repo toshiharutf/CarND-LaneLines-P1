@@ -149,54 +149,63 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(255,0,0),20)
     cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(255,0,0),20)
 
-    fit_lines_edges = weighted_img(image,fit_line_image,0.8,1,0)
-    plt.figure()
-    plt.imshow(fit_lines_edges)
+    return  weighted_img(image,fit_line_image,0.8,1,0)
+
 
 ###############################################################################
 
 imagesFolder = "test_images"
-init(imagesFolder)  # Change dir to to imagesFolder
+outputFolder = "images_output"
+#init(imagesFolder)  # Change dir to to imagesFolder
 #
-for file in glob.glob("*.jpg"):
-    print(file)
-    image = mpimg.imread(file)
-#image = mpimg.imread('solidYellowCurve.jpg')
 
-    imshape = image.shape
-    gray = gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+for file in os.listdir(imagesFolder):
+    if file.endswith(".jpg"):
+        image = mpimg.imread(imagesFolder+"/"+file)
+    #for file in glob.glob("*.jpg"):
+    #    print(file)
+    #    image = mpimg.imread(file)
+    #image = mpimg.imread('solidYellowCurve.jpg')
+    
+        imshape = image.shape
+        gray = gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+            
+        # Define a kernel size and apply Gaussian smoothing
+        blur_gray = gaussianBlur(gray,kernel_size=5)
         
-    # Define a kernel size and apply Gaussian smoothing
-    blur_gray = gaussianBlur(gray,kernel_size=5)
+        # Define our parameters for Canny and apply
+        low_threshold = 50
+        high_threshold = 150
+        edges = canny(blur_gray, low_threshold, high_threshold)
+        
+        # Masking Region of interest ()
+        vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
+        masked_edges = roi(edges,vertices)
+        
+        # Define the Hough transform parameters
+        # Make a blank the same size as our image to draw on
+        rho = 1 # distance resolution in pixels of the Hough grid
+        theta = np.pi/180 # angular resolution in radians of the Hough grid
+        threshold = 60  #1   # minimum number of votes (intersections in Hough grid cell)
+        min_line_length = 20 #5 #minimum number of pixels making up a line
+        max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
+        line_image = np.copy(image)*0 # creating a blank to draw lines on
+        
+        # Run Hough on edge detected image
+        houghLines = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
+        #print(houghLines)
+        
+        # Identified the curve equation of each, left and right lanes
+        leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
+        
+        verLim = 350 # Vertical limit to draw the identified lane's curves
+        output_img = drawLines(image,leftCurve,rightCurve,verLim)
+        plt.figure()
+        plt.imshow(output_img)
+        
+        cv2.imwrite(outputFolder+"/"+file+'-output.jpg',output_img)
     
-    # Define our parameters for Canny and apply
-    low_threshold = 50
-    high_threshold = 150
-    edges = canny(blur_gray, low_threshold, high_threshold)
     
-    # Masking Region of interest ()
-    vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
-    masked_edges = roi(edges,vertices)
-    
-    # Define the Hough transform parameters
-    # Make a blank the same size as our image to draw on
-    rho = 1 # distance resolution in pixels of the Hough grid
-    theta = np.pi/180 # angular resolution in radians of the Hough grid
-    threshold = 60  #1   # minimum number of votes (intersections in Hough grid cell)
-    min_line_length = 20 #5 #minimum number of pixels making up a line
-    max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
-    line_image = np.copy(image)*0 # creating a blank to draw lines on
-    
-    # Run Hough on edge detected image
-    houghLines = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
-    #print(houghLines)
-    
-    # Identified the curve equation of each, left and right lanes
-    leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
-    
-    verLim = 350 # Vertical limit to draw the identified lane's curves
-    drawLines(image,leftCurve,rightCurve,verLim)
-
 
 
 
