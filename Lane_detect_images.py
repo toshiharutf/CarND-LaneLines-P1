@@ -21,15 +21,13 @@ def grayscale(img):
     # Grayscale transform
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-def colorFilter(img,bgr,thresh):
+def colorFilter(img,lowerColor,upperColor):
     """
     Isolate certain color range of image
     To isolate multiple colors, isolate them separately and bitwise added them
     color is assumed in RGB format
     """
-    minBGR = np.array([bgr[0] - thresh, bgr[1] - thresh, bgr[2] - thresh])
-    maxBGR = np.array([bgr[0] + thresh, bgr[1] + thresh, bgr[2] + thresh])
-    return cv2.inRange(img,minBGR,maxBGR)
+    return cv2.inRange(img,lowerColor,upperColor)
 
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
@@ -61,9 +59,9 @@ def roi(img, vertices):
     fill color    
     """
     cv2.fillPoly(mask, vertices, ignore_mask_color)
-    plt.figure()
-    plt.imshow(image)
-    plt.contour(mask,colors='b',linestyles='dashed')
+#    plt.figure()
+#    plt.imshow(image)
+#    plt.contour(mask,colors='b',linestyles='dashed')
     
     """returning the image only where mask pixels are nonzero"""
     masked_image = cv2.bitwise_and(img, mask)
@@ -84,9 +82,11 @@ def Lane_lines_fit(houghLines,poly_degree=1):
     for line in houghLines:
         for x1,y1,x2,y2 in line:
             #if m< 0, left line
-            if ((y1-y2)/(x1-x2))<0:
+            m = (y1-y2)/(x1-x2)
+#            print(m)
+            if m<-0.5:
                 leftPoints=np.append(leftPoints,[[x1,x2],[y1,y2]],axis=1)
-            else:
+            elif m>0.5:
                rightPoints=np.append(rightPoints,[[x1,x2],[y1,y2]],axis=1)
     
 #    print(rightPoints)
@@ -155,8 +155,8 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     fit_line_image = np.copy(img)*0
     
     """ Drawing the curves """
-    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(255,0,0),10)
-    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(255,0,0),10)
+    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(0,0,255),10)
+    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(0,0,255),10)
     
     """
     Overlaying the curves on the input image, applying a previous transparency
@@ -174,14 +174,30 @@ outputFolder = "images_output"
 
 for file in os.listdir(imagesFolder):
     if file.endswith(".jpg"):
-        image = mpimg.imread(imagesFolder+"/"+file)
+#        image = mpimg.imread(imagesFolder+"/"+file)
+        image = cv2.imread(imagesFolder+"/"+file)
+        
+        #Filter white color  in BGR order!!!
+        lowerWhite = np.array([195,195,195])
+        upperWhite = np.array([255,255,255])
+        
+ 
+        lowerYellow = np.array([80, 190, 215])
+        upperYellow = np.array([150, 255, 255]) 
+        
+        imageWhites = colorFilter(image,lowerWhite,upperWhite)
+        imageYellows = colorFilter(image,lowerYellow,upperYellow)
+        imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
+        
+        plt.figure()
+        plt.imshow(imageFiltered)
     #for file in glob.glob("*.jpg"):
     #    print(file)
     #    image = mpimg.imread(file)
     #image = mpimg.imread('solidYellowCurve.jpg')
     
         imshape = image.shape
-        gray = gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
             
         """ Define a kernel size and apply Gaussian smoothing"""
         blur_gray = gaussianBlur(gray,kernel_size=5)
@@ -190,6 +206,8 @@ for file in os.listdir(imagesFolder):
         low_threshold = 50
         high_threshold = 200
         edges = canny(blur_gray, low_threshold, high_threshold)
+        plt.figure()
+        plt.imshow(edges)
         
         """ Masking Region of interest"""
         vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
@@ -201,7 +219,7 @@ for file in os.listdir(imagesFolder):
         """
         rho = 1 # distance resolution in pixels of the Hough grid
         theta = np.pi/180 # angular resolution in radians of the Hough grid
-        threshold = 60  #1   # minimum number of votes (intersections in Hough grid cell)
+        threshold =30  #1   # minimum number of votes (intersections in Hough grid cell)
         min_line_length = 20 #5 #minimum number of pixels making up a line
         max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
         line_image = np.copy(image)*0 # creating a blank to draw lines on
@@ -216,14 +234,14 @@ for file in os.listdir(imagesFolder):
         verLim = 350 # Vertical limit to draw the identified lane's curves
         output_img = drawLines(image,leftCurve,rightCurve,verLim)
         
-        #print(file)
-        plt.figure()
-        plt.title(file[:-4]+'-output')
-        plt.imshow(output_img)
         
-        output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
         cv2.imwrite(outputFolder+"/"+file[:-4]+'-output.jpg',output_img)
     
+    #print(file)
+        plt.figure()
+        plt.title(file[:-4]+'-output')
+        output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
+        plt.imshow(output_img)
     
 
 
