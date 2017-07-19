@@ -112,7 +112,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
 #    comb_img = cv2.addWeighted(image, 0.8, line_img, 1,0.5)
 #    plt.figure()        
 #    plt.imshow(comb_img)
-#   draw_lines(line_img, lines)
+
     return lines
 
 def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
@@ -200,7 +200,8 @@ for file in os.listdir(imagesFolder):
         gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
             
         """ Define a kernel size and apply Gaussian smoothing"""
-        blur_gray = gaussianBlur(gray,kernel_size=5)
+#        blur_gray = gaussianBlur(gray,kernel_size=5)
+        blur_gray = gaussianBlur(imageFiltered,kernel_size=5)
         
         # Define our parameters for Canny and apply
         low_threshold = 50
