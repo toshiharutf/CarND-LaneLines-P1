@@ -59,9 +59,9 @@ def roi(img, vertices):
     fill color    
     """
     cv2.fillPoly(mask, vertices, ignore_mask_color)
-#    plt.figure()
-#    plt.imshow(image)
-#    plt.contour(mask,colors='b',linestyles='dashed')
+    plt.figure()
+    plt.imshow(image)
+    plt.contour(mask,colors='b',linestyles='dashed')
     
     """returning the image only where mask pixels are nonzero"""
     masked_image = cv2.bitwise_and(img, mask)
@@ -149,7 +149,7 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     y1_right = imshape[0]
     x1_right = int(y1_right*rightCurve[0]+rightCurve[1])
     
-    y2_right = 350
+    y2_right = verLim
     x2_right = int(y2_right*rightCurve[0]+rightCurve[1])
     
     fit_line_image = np.copy(img)*0
@@ -167,7 +167,8 @@ def drawLines(img,leftCurve,rightCurve,verLim):
 
 ###############################################################################
 
-imagesFolder = "test_images"
+#imagesFolder = "test_images"
+imagesFolder = "images_challenge"
 outputFolder = "images_output"
 #init(imagesFolder)  # Change dir to to imagesFolder
 #
@@ -180,9 +181,14 @@ for file in os.listdir(imagesFolder):
         #Filter white color  in BGR order!!!
         lowerWhite = np.array([195,195,195])
         upperWhite = np.array([255,255,255])
-        
- 
-        lowerYellow = np.array([80, 190, 215])
+  
+#        lowerYellow = np.array([80, 190, 215])
+#        upperYellow = np.array([150, 255, 255]) 
+
+        """Challenge colors"""
+#        lowerYellow = np.array([30, 180, 215])
+#        upperYellow = np.array([150, 255, 255]) 
+        lowerYellow = np.array([15, 170, 215])
         upperYellow = np.array([150, 255, 255]) 
         
         imageWhites = colorFilter(image,lowerWhite,upperWhite)
@@ -196,22 +202,26 @@ for file in os.listdir(imagesFolder):
     #    image = mpimg.imread(file)
     #image = mpimg.imread('solidYellowCurve.jpg')
     
+        """ Masking Region of interest"""
         imshape = image.shape
-        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+        #        vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
+        """ Challenge"""
+        vertices = np.array([[(0,imshape[0]),(540, 400), (740,400), (imshape[1],imshape[0])]], dtype=np.int32)
+        maskedImg = roi(imageFiltered,vertices)
+    
+#        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
             
         """ Define a kernel size and apply Gaussian smoothing"""
-        blur_gray = gaussianBlur(gray,kernel_size=5)
+        blur_gray = gaussianBlur(maskedImg,kernel_size=5)
         
         # Define our parameters for Canny and apply
         low_threshold = 50
         high_threshold = 200
         edges = canny(blur_gray, low_threshold, high_threshold)
-        plt.figure()
-        plt.imshow(edges)
+#        plt.figure()
+#        plt.imshow(edges)
         
-        """ Masking Region of interest"""
-        vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
-        masked_edges = roi(edges,vertices)
+
         
         """
         Define the Hough transform parameters
@@ -225,13 +235,16 @@ for file in os.listdir(imagesFolder):
         line_image = np.copy(image)*0 # creating a blank to draw lines on
         
         """ Run Hough on edge detected image"""
-        houghLines = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
+        houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
         #print(houghLines)
         
         """ Identified the curve equation of each, left and right lanes"""
         leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
         
-        verLim = 350 # Vertical limit to draw the identified lane's curves
+#        verLim = 350 # Vertical limit to draw the identified lane's curves
+        """Challenge verLim"""
+        verLim = 500
+        
         output_img = drawLines(image,leftCurve,rightCurve,verLim)
         
         
