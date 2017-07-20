@@ -103,7 +103,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
 #    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    line_img = np.copy(image)*0
+    line_img = np.copy(img)*0
     
     for line in lines:
         for x1,y1,x2,y2 in line:
@@ -189,7 +189,7 @@ for file in os.listdir(imagesFolder):
 #        lowerYellow = np.array([30, 180, 215])
 #        upperYellow = np.array([150, 255, 255]) 
         lowerYellow = np.array([15, 170, 215])
-        upperYellow = np.array([150, 255, 255]) 
+        upperYellow = np.array([160, 255, 255]) 
         
         imageWhites = colorFilter(image,lowerWhite,upperWhite)
         imageYellows = colorFilter(image,lowerYellow,upperYellow)
@@ -206,7 +206,7 @@ for file in os.listdir(imagesFolder):
         imshape = image.shape
         #        vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
         """ Challenge"""
-        vertices = np.array([[(0,imshape[0]),(540, 400), (740,400), (imshape[1],imshape[0])]], dtype=np.int32)
+        vertices = np.array([[(0,660),(550, 450), (730,450), (imshape[1],660)]], dtype=np.int32)
         maskedImg = roi(imageFiltered,vertices)
     
 #        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
@@ -243,7 +243,7 @@ for file in os.listdir(imagesFolder):
         
 #        verLim = 350 # Vertical limit to draw the identified lane's curves
         """Challenge verLim"""
-        verLim = 500
+        verLim = 450
         
         output_img = drawLines(image,leftCurve,rightCurve,verLim)
         

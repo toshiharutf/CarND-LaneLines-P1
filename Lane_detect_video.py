@@ -21,15 +21,13 @@ def grayscale(img):
     # Grayscale transform
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-def colorFilter(img,bgr,thresh):
+def colorFilter(img,lowerColor,upperColor):
     """
     Isolate certain color range of image
     To isolate multiple colors, isolate them separately and bitwise added them
     color is assumed in RGB format
     """
-    minBGR = np.array([bgr[0] - thresh, bgr[1] - thresh, bgr[2] - thresh])
-    maxBGR = np.array([bgr[0] + thresh, bgr[1] + thresh, bgr[2] + thresh])
-    return cv2.inRange(img,minBGR,maxBGR)
+    return cv2.inRange(img,lowerColor,upperColor)
 
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
@@ -61,12 +59,10 @@ def roi(img, vertices):
     fill color    
     """
     cv2.fillPoly(mask, vertices, ignore_mask_color)
-#    plt.figure()
-#    plt.imshow(image)
-#    plt.contour(mask,colors='b',linestyles='dashed')
     
     """returning the image only where mask pixels are nonzero"""
     masked_image = cv2.bitwise_and(img, mask)
+    
     return masked_image
 
 def Lane_lines_fit(houghLines,poly_degree=1):
@@ -86,7 +82,7 @@ def Lane_lines_fit(houghLines,poly_degree=1):
             #if m< 0, left line
             m = (y1-y2)/(x1-x2)
 #            print(m)
-            if m<-0.5:   # This restriction is a small filter for video artifacts
+            if m<-0.5:
                 leftPoints=np.append(leftPoints,[[x1,x2],[y1,y2]],axis=1)
             elif m>0.5:
                rightPoints=np.append(rightPoints,[[x1,x2],[y1,y2]],axis=1)
@@ -97,7 +93,7 @@ def Lane_lines_fit(houghLines,poly_degree=1):
    
     return leftCurve,rightCurve
 
-def hough_lines(origImg,img, rho, theta, threshold, min_line_len, max_line_gap):
+def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     `img` should be the output of a Canny transform.
         
@@ -105,7 +101,7 @@ def hough_lines(origImg,img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
 #    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    line_img = np.copy(origImg)*0
+    line_img = np.copy(img)*0
     
     for line in lines:
         for x1,y1,x2,y2 in line:
@@ -151,14 +147,14 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     y1_right = imshape[0]
     x1_right = int(y1_right*rightCurve[0]+rightCurve[1])
     
-    y2_right = 350
+    y2_right = verLim
     x2_right = int(y2_right*rightCurve[0]+rightCurve[1])
     
     fit_line_image = np.copy(img)*0
     
     """ Drawing the curves """
-    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(255,0,0),10)
-    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(255,0,0),10)
+    cv2.line(fit_line_image,(x1_left,y1_left),(x2_left,y2_left),(0,0,255),10)
+    cv2.line(fit_line_image,(x1_right,y1_right),(x2_right,y2_right),(0,0,255),10)
     
     """
     Overlaying the curves on the input image, applying a previous transparency
@@ -166,24 +162,47 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     """
     return  weighted_img(img,fit_line_image,0.8,1,0)
 
+
 def process_image(image):
     # NOTE: The output you return should be a color image (3 channel) for processing video below
     # TODO: put your pipeline here,
     # you should return the final output (image where lines are drawn on lanes)
+
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+#Filter white color  in BGR order!!!
+    lowerWhite = np.array([195,195,195])
+    upperWhite = np.array([255,255,255])
+#Filter yellow color  in BGR order!!!
+#    lowerYellow = np.array([15, 170, 215])
+#    upperYellow = np.array([150, 255, 255]) 
+
+    lowerYellow = np.array([15, 170, 215])
+    upperYellow = np.array([160, 255, 255]) 
+    
+    imageWhites = colorFilter(image,lowerWhite,upperWhite)
+    imageYellows = colorFilter(image,lowerYellow,upperYellow)
+    imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
+    
+
+    """ Masking Region of interest"""
     imshape = image.shape
-    gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+    #        vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
+    """ Challenge"""
+    vertices = np.array([[(0,660),(550, 450), (730,450), (imshape[1],660)]], dtype=np.int32)
+    maskedImg = roi(imageFiltered,vertices)
+
+#        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
         
     """ Define a kernel size and apply Gaussian smoothing"""
-    blur_gray = gaussianBlur(gray,kernel_size=5)
+    blur_gray = gaussianBlur(maskedImg,kernel_size=5)
     
     # Define our parameters for Canny and apply
-    low_threshold = 30
-    high_threshold = 250
+    low_threshold = 50
+    high_threshold = 200
     edges = canny(blur_gray, low_threshold, high_threshold)
-    
-    """ Masking Region of interest"""
-    vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
-    masked_edges = roi(edges,vertices)
+#        plt.figure()
+#        plt.imshow(edges)
     
     """
     Define the Hough transform parameters
@@ -191,22 +210,25 @@ def process_image(image):
     """
     rho = 1 # distance resolution in pixels of the Hough grid
     theta = np.pi/180 # angular resolution in radians of the Hough grid
-    threshold = 30  #1   # minimum number of votes (intersections in Hough grid cell)
-    min_line_length = 20 #5 #minimum number of pixels making up a line
-    max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
-        
+    threshold =20  #1   # minimum number of votes (intersections in Hough grid cell)
+    min_line_length = 10 #5 #minimum number of pixels making up a line
+    max_line_gap = 30 #1   # maximum gap in pixels between connectable line segments
+    line_image = np.copy(image)*0 # creating a blank to draw lines on
+    
     """ Run Hough on edge detected image"""
-    houghLines = hough_lines(image,masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
+    houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
     #print(houghLines)
     
     """ Identified the curve equation of each, left and right lanes"""
     leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
     
-    verLim = 350 # Vertical limit to draw the identified lane's curves
+#        verLim = 350 # Vertical limit to draw the identified lane's curves
+    """Challenge verLim"""
+    verLim = 500
+    
     output_img = drawLines(image,leftCurve,rightCurve,verLim)
-    
-    
-#    output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
+     
+    output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
 
     return output_img
 
@@ -222,14 +244,14 @@ outputFolder = "test_videos_output"
 #    if file.endswith(".mp4"):
 #        videoInput = mpimg.imread(inputFolder+"/"+file)
 
-white_output = 'test_videos_output/solidYellowLeft.mp4'
+white_output = 'test_videos_output/challenge.mp4'
 #    white_output = outputFolder + "/" + file
 ## To speed up the testing process you may want to try your pipeline on a shorter subclip of the video
 ## To do so add .subclip(start_second,end_second) to the end of the line below
 ## Where start_second and end_second are integer values representing the start and end of the subclip
 ## You may also uncomment the following line for a subclip of the first 5 seconds
-clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
-#clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
+clip1 = VideoFileClip("test_videos/challenge.mp4")
+#clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4").subclip(0,5)
 #    clip1 = VideoFileClip(videoInput)
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
 white_clip.write_videofile(white_output, audio=False)
