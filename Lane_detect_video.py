@@ -209,7 +209,7 @@ def process_image(image):
     # Define our parameters for Canny and apply
     low_threshold = 50
     high_threshold = 200
-    edges = canny(blur_gray, low_threshold, high_threshold)
+#    edges = canny(blur_gray, low_threshold, high_threshold)
 #        plt.figure()
 #        plt.imshow(edges)
  
@@ -219,13 +219,13 @@ def process_image(image):
     """
     rho = 1 # distance resolution in pixels of the Hough grid
     theta = np.pi/180 # angular resolution in radians of the Hough grid
-    threshold =30  #1   # minimum number of votes (intersections in Hough grid cell)
+    threshold =50  #1   # minimum number of votes (intersections in Hough grid cell)
     min_line_length = 20 #5 #minimum number of pixels making up a line
     max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
     line_image = np.copy(image)*0 # creating a blank to draw lines on
     
     """ Run Hough on edge detected image"""
-    houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
+    houghLines = hough_lines(blur_gray, rho, theta, threshold, min_line_length, max_line_gap)
     #print(houghLines)
     
     """ Identified the curve equation of each, left and right lanes"""
@@ -251,16 +251,16 @@ outputFolder = "test_videos_output"
 #    if file.endswith(".mp4"):
 #        videoInput = mpimg.imread(inputFolder+"/"+file)
 
-#white_output = 'test_videos_output/solidYellowLeft.mp4'
-white_output = 'test_videos_output/solidWhiteRight.mp4'
+white_output = 'test_videos_output/solidYellowLeft.mp4'
+#white_output = 'test_videos_output/solidWhiteRight.mp4'
 
 #    white_output = outputFolder + "/" + file
 ## To speed up the testing process you may want to try your pipeline on a shorter subclip of the video
 ## To do so add .subclip(start_second,end_second) to the end of the line below
 ## Where start_second and end_second are integer values representing the start and end of the subclip
 ## You may also uncomment the following line for a subclip of the first 5 seconds
-#clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
-clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
+clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
+#clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
 #    clip1 = VideoFileClip(videoInput)
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
 white_clip.write_videofile(white_output, audio=False)
