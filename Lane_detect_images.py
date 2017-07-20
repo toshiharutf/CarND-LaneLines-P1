@@ -61,10 +61,8 @@ def roi(img, vertices):
     cv2.fillPoly(mask, vertices, ignore_mask_color)
     
     plt.figure()
-    output_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  #change to RGB
-    plt.imshow(output_img)
-    maskGray = cv2.cvtColor(mask,cv2.COLOR_RGB2GRAY)
-    plt.contour( maskGray,colors='b', linestyles='dashed')
+    plt.imshow(img)
+    plt.contour(mask,colors='b', linestyles='dashed')
     
     """returning the image only where mask pixels are nonzero"""
     masked_image = cv2.bitwise_and(img, mask)
@@ -179,15 +177,8 @@ for file in os.listdir(imagesFolder):
     if file.endswith(".jpg"):
 #        image = mpimg.imread(imagesFolder+"/"+file)
         image = cv2.imread(imagesFolder+"/"+file)
-        print("-------------------------------------------------------------")
-        print(file[:-4])
-        
-        """ Masking Region of interest"""
-        imshape = image.shape
-        vertices = np.array([[(0,imshape[0]),(430, 300), (530,300), (imshape[1],imshape[0])]], dtype=np.int32)
 
-        maskedImg = roi(image,vertices)
-        
+        """ Color filtering"""
         #Filter white color  in BGR order!!!
         lowerWhite = np.array([195,195,195])
         upperWhite = np.array([255,255,255])
@@ -196,12 +187,18 @@ for file in os.listdir(imagesFolder):
         lowerYellow = np.array([80, 190, 215])
         upperYellow = np.array([150, 255, 255]) 
 
-        imageWhites = colorFilter(maskedImg,lowerWhite,upperWhite)
-        imageYellows = colorFilter(maskedImg,lowerYellow,upperYellow)
+        imageWhites = colorFilter(image,lowerWhite,upperWhite)
+        imageYellows = colorFilter(image,lowerYellow,upperYellow)
         imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
         
-        plt.figure()
-        plt.imshow(imageFiltered)
+       
+        """ Masking Region of interest"""
+        imshape = image.shape
+        vertices = np.array([[(0,imshape[0]),(430, 300), (530,300), (imshape[1],imshape[0])]], dtype=np.int32)
+
+        maskedImg = roi(imageFiltered,vertices)
+        
+
     #for file in glob.glob("*.jpg"):
     #    print(file)
     #    image = mpimg.imread(file)
@@ -210,7 +207,7 @@ for file in os.listdir(imagesFolder):
 #        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
             
         """ Define a kernel size and apply Gaussian smoothing"""
-        blur_gray = gaussianBlur(imageFiltered,kernel_size=5)
+        blur_gray = gaussianBlur(maskedImg,kernel_size=5)
         
         # Define our parameters for Canny and apply
         low_threshold = 50

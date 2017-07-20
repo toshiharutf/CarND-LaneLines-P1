@@ -62,9 +62,10 @@ def roi(img, vertices):
     fill color    
     """
     cv2.fillPoly(mask, vertices, ignore_mask_color)
+    
 #    plt.figure()
-#    plt.imshow(image)
-#    plt.contour(mask,colors='b',linestyles='dashed')
+#    plt.imshow(img)
+#    plt.contour(mask,colors='b', linestyles='dashed')
     
     """returning the image only where mask pixels are nonzero"""
     masked_image = cv2.bitwise_and(img, mask)
@@ -106,7 +107,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
 #    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    line_img = np.copy(image)*0
+    line_img = np.copy(img)*0
     
     for line in lines:
         for x1,y1,x2,y2 in line:
@@ -165,19 +166,16 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     Overlaying the curves on the input image, applying a previous transparency
     transformation
     """
-    return  weighted_img(image,fit_line_image,0.8,1,0)
+    return  weighted_img(img,fit_line_image,0.8,1,0)
 
 def process_image(image):
     # NOTE: The output you return should be a color image (3 channel) for processing video below
     # TODO: put your pipeline here,
     # you should return the final output (image where lines are drawn on lanes)
-       
-    """ Masking Region of interest"""
-    imshape = image.shape
-    vertices = np.array([[(0,imshape[0]),(450, 300), (500,300), (imshape[1],imshape[0])]], dtype=np.int32)
-
-    maskedImg = roi(image,vertices)
     
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  #change to BGR
+       
+    """ Color filtering"""
     #Filter white color  in BGR order!!!
     lowerWhite = np.array([195,195,195])
     upperWhite = np.array([255,255,255])
@@ -186,12 +184,18 @@ def process_image(image):
     lowerYellow = np.array([80, 190, 215])
     upperYellow = np.array([150, 255, 255]) 
 
-    imageWhites = colorFilter(maskedImg,lowerWhite,upperWhite)
-    imageYellows = colorFilter(maskedImg,lowerYellow,upperYellow)
+    imageWhites = colorFilter(image,lowerWhite,upperWhite)
+    imageYellows = colorFilter(image,lowerYellow,upperYellow)
     imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
     
-    plt.figure()
-    plt.imshow(imageFiltered)
+   
+    """ Masking Region of interest"""
+    imshape = image.shape
+    vertices = np.array([[(0,imshape[0]),(430, 300), (530,300), (imshape[1],imshape[0])]], dtype=np.int32)
+
+    maskedImg = roi(imageFiltered,vertices)
+    
+
 #for file in glob.glob("*.jpg"):
 #    print(file)
 #    image = mpimg.imread(file)
@@ -200,7 +204,7 @@ def process_image(image):
 #        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
         
     """ Define a kernel size and apply Gaussian smoothing"""
-    blur_gray = gaussianBlur(imageFiltered,kernel_size=5)
+    blur_gray = gaussianBlur(maskedImg,kernel_size=5)
     
     # Define our parameters for Canny and apply
     low_threshold = 50
@@ -230,9 +234,8 @@ def process_image(image):
     verLim = 350 # Vertical limit to draw the identified lane's curves
     
     output_img = drawLines(image,leftCurve,rightCurve,verLim)
-    
-    
-#    output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
+ 
+    output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
 
     return output_img
 
@@ -248,14 +251,16 @@ outputFolder = "test_videos_output"
 #    if file.endswith(".mp4"):
 #        videoInput = mpimg.imread(inputFolder+"/"+file)
 
-white_output = 'test_videos_output/solidYellowLeft.mp4'
+#white_output = 'test_videos_output/solidYellowLeft.mp4'
+white_output = 'test_videos_output/solidWhiteRight.mp4'
+
 #    white_output = outputFolder + "/" + file
 ## To speed up the testing process you may want to try your pipeline on a shorter subclip of the video
 ## To do so add .subclip(start_second,end_second) to the end of the line below
 ## Where start_second and end_second are integer values representing the start and end of the subclip
 ## You may also uncomment the following line for a subclip of the first 5 seconds
-clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
-#clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
+#clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
+clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
 #    clip1 = VideoFileClip(videoInput)
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
 white_clip.write_videofile(white_output, audio=False)
