@@ -68,7 +68,7 @@ def roi(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
-def Lane_lines_fit(houghLines,poly_degree=1):
+def laneLinesFit(houghLines,poly_degree=1):
     """
     The points obtained from the Hough transformation are used to
     identify the polynomial curve parameters using the function polyfit
@@ -104,7 +104,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
 #    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    line_img = np.copy(image)*0
+    line_img = np.copy(img)*0
     
     for line in lines:
         for x1,y1,x2,y2 in line:
@@ -150,7 +150,7 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     y1_right = imshape[0]
     x1_right = int(y1_right*rightCurve[0]+rightCurve[1])
     
-    y2_right = 350
+    y2_right = verLim
     x2_right = int(y2_right*rightCurve[0]+rightCurve[1])
     
     fit_line_image = np.copy(img)*0
@@ -165,6 +165,66 @@ def drawLines(img,leftCurve,rightCurve,verLim):
     """
     return  weighted_img(image,fit_line_image,0.8,1,0)
 
+def process_image(image):
+    # NOTE: The output you return should be a color image (3 channel) for processing video below
+    # TODO: put your pipeline here,
+    # you should return the final output (image where lines are drawn on lanes)
+    
+    """ Color filtering"""
+    #Filter white color  in BGR order!!!
+    lowerWhite = np.array([195,195,195])
+    upperWhite = np.array([255,255,255])
+    
+    #Filter yellow color  in BGR order!!!
+    lowerYellow = np.array([80, 190, 215])
+    upperYellow = np.array([150, 255, 255]) 
+
+    imageWhites = colorFilter(image,lowerWhite,upperWhite)
+    imageYellows = colorFilter(image,lowerYellow,upperYellow)
+    imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
+    
+   
+    """ Masking Region of interest"""
+    imshape = image.shape
+    vertices = np.array([[(0,imshape[0]),(430, 300), (530,300), (imshape[1],imshape[0])]], dtype=np.int32)
+
+    maskedImg = roi(imageFiltered,vertices)
+    
+        
+    """ Define a kernel size and apply Gaussian smoothing"""
+    blur_gray = gaussianBlur(maskedImg,kernel_size=5)
+    
+    # Define our parameters for Canny and apply
+    low_threshold = 50
+    high_threshold = 200
+    edges = canny(blur_gray, low_threshold, high_threshold)
+#        plt.figure()
+#        plt.imshow(edges)
+ 
+    """
+    Define the Hough transform parameters
+    Make a blank the same size as our image to draw on
+    """
+    rho = 1 # distance resolution in pixels of the Hough grid
+    theta = np.pi/180 # angular resolution in radians of the Hough grid
+    threshold =30  #1   # minimum number of votes (intersections in Hough grid cell)
+    min_line_length = 20 #5 #minimum number of pixels making up a line
+    max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
+    
+    """ Run Hough on edge detected image"""
+    houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
+    #print(houghLines)
+    
+    """ Identified the curve equation of each, left and right lanes"""
+    leftCurve,rightCurve = laneLinesFit(houghLines,poly_degree=1)
+    
+    verLim = 350 # Vertical limit to draw the identified lane's curves
+    
+    output_img = drawLines(image,leftCurve,rightCurve,verLim)
+ 
+    output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
+
+    return output_img
 
 ###############################################################################
 
@@ -177,76 +237,11 @@ for file in os.listdir(imagesFolder):
     if file.endswith(".jpg"):
 #        image = mpimg.imread(imagesFolder+"/"+file)
         image = cv2.imread(imagesFolder+"/"+file)
-
-        """ Color filtering"""
-        #Filter white color  in BGR order!!!
-        lowerWhite = np.array([195,195,195])
-        upperWhite = np.array([255,255,255])
         
-        #Filter yellow color  in BGR order!!!
-        lowerYellow = np.array([80, 190, 215])
-        upperYellow = np.array([150, 255, 255]) 
-
-        imageWhites = colorFilter(image,lowerWhite,upperWhite)
-        imageYellows = colorFilter(image,lowerYellow,upperYellow)
-        imageFiltered = cv2.bitwise_or(imageWhites, imageYellows)
-        
-       
-        """ Masking Region of interest"""
-        imshape = image.shape
-        vertices = np.array([[(0,imshape[0]),(430, 300), (530,300), (imshape[1],imshape[0])]], dtype=np.int32)
-
-        maskedImg = roi(imageFiltered,vertices)
-        
-
-    #for file in glob.glob("*.jpg"):
-    #    print(file)
-    #    image = mpimg.imread(file)
-    #image = mpimg.imread('solidYellowCurve.jpg')
-       
-#        gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
-            
-        """ Define a kernel size and apply Gaussian smoothing"""
-        blur_gray = gaussianBlur(maskedImg,kernel_size=5)
-        
-        # Define our parameters for Canny and apply
-        low_threshold = 50
-        high_threshold = 200
-        edges = canny(blur_gray, low_threshold, high_threshold)
-#        plt.figure()
-#        plt.imshow(edges)
- 
-        """
-        Define the Hough transform parameters
-        Make a blank the same size as our image to draw on
-        """
-        rho = 1 # distance resolution in pixels of the Hough grid
-        theta = np.pi/180 # angular resolution in radians of the Hough grid
-        threshold =30  #1   # minimum number of votes (intersections in Hough grid cell)
-        min_line_length = 20 #5 #minimum number of pixels making up a line
-        max_line_gap = 15 #1   # maximum gap in pixels between connectable line segments
-        line_image = np.copy(image)*0 # creating a blank to draw lines on
-        
-        """ Run Hough on edge detected image"""
-        houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
-        #print(houghLines)
-        
-        """ Identified the curve equation of each, left and right lanes"""
-        leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
-        
-        verLim = 350 # Vertical limit to draw the identified lane's curves
-        
-        output_img = drawLines(image,leftCurve,rightCurve,verLim)
+        output_img = process_image(image)
        
         cv2.imwrite(outputFolder+"/"+file[:-4]+'-output.jpg',output_img)
     
-    #print(file)
         plt.figure()
 #        plt.title(file[:-4]+'-output')
-        output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)  #change to RGB
         plt.imshow(output_img)
-    
-
-
-
-

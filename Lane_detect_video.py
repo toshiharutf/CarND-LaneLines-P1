@@ -71,7 +71,7 @@ def roi(img, vertices):
     masked_image = cv2.bitwise_and(img, mask)
     return masked_image
 
-def Lane_lines_fit(houghLines,poly_degree=1):
+def laneLinesFit(houghLines,poly_degree=1):
     """
     The points obtained from the Hough transformation are used to
     identify the polynomial curve parameters using the function polyfit
@@ -229,7 +229,7 @@ def process_image(image):
     #print(houghLines)
     
     """ Identified the curve equation of each, left and right lanes"""
-    leftCurve,rightCurve = Lane_lines_fit(houghLines,poly_degree=1)
+    leftCurve,rightCurve = laneLinesFit(houghLines,poly_degree=1)
     
     verLim = 350 # Vertical limit to draw the identified lane's curves
     
