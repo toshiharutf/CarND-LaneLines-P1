@@ -200,7 +200,7 @@ def process_image(image):
     # Define our parameters for Canny and apply
     low_threshold = 50
     high_threshold = 200
-    edges = canny(blur_gray, low_threshold, high_threshold)
+#    edges = canny(blur_gray, low_threshold, high_threshold)
 #        plt.figure()
 #        plt.imshow(edges)
     
@@ -210,13 +210,13 @@ def process_image(image):
     """
     rho = 1 # distance resolution in pixels of the Hough grid
     theta = np.pi/180 # angular resolution in radians of the Hough grid
-    threshold =20  #1   # minimum number of votes (intersections in Hough grid cell)
+    threshold =25  #1   # minimum number of votes (intersections in Hough grid cell)
     min_line_length = 10 #5 #minimum number of pixels making up a line
     max_line_gap = 30 #1   # maximum gap in pixels between connectable line segments
     line_image = np.copy(image)*0 # creating a blank to draw lines on
     
     """ Run Hough on edge detected image"""
-    houghLines = hough_lines(edges, rho, theta, threshold, min_line_length, max_line_gap)
+    houghLines = hough_lines(blur_gray, rho, theta, threshold, min_line_length, max_line_gap)
     #print(houghLines)
     
     """ Identified the curve equation of each, left and right lanes"""
