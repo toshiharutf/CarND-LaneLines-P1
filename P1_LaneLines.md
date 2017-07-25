@@ -60,12 +60,12 @@ The Hough algorithm transform the space of the image from X,Y cartesian coordina
 
 The minimum number of intersections in order to define a line can be tuned with the *threshold* variable. The other variable define the resolution of the transformation, and the relation between multiple lines in the same figure. The output of this function is a tuple of vectors defined as **[x1 y1 x1 y2]** that indicates a detected line.
 
-**Note:** In this project, the canny edge detection is not used, since this algorithm reduces the number of available points for the Hough transformation function. If less points are avaible, the Hough line algorithm may have problems finding the lines. This can be problematic in cases were the quality image is not high enough to distinguish the lane lines, as in the challenge video (see image below), in which in some frames, the lanes on the right side are reduced to small white squares. The color filtering algorithm by itself make a good job at detecting the lanes, while leaving enough data points for the Hough algorithm.
+**Note:** In this project, the canny edge detection is not used, since this algorithm reduces the number of available points for the Hough transformation function. If less points are avaible, the Hough line algorithm may have problems finding the lines. This can be problematic in cases were the quality image is not high enough to distinguish the lane lines, as in the challenge video (see image below), in which in some frames, the lanes on the right side are partially absent. The color filtering algorithm by itself make a good job at detecting the lanes, while leaving enough data points for the Hough algorithm.
 
 ![alt text](documentation_images/challenge_10.jpg)
 
 
-### Step 5: Polynomial fitting to determine the lines equations - function laneLinesFit(houghLines, poly_degree=1)
+### Step 5: Polynomial fitting to determine the lines equations - function laneLinesFit(houghLines, poly_degree)
 
 The points found by the Hough Lines function are fed into the the polynomial fitting function. First, this function segregate which lines are from the left, and which are from the right side. Then, the (X,Y) points are used to fine the best fitting polynomial that represent each curve. In this case, a polynomial of first degree is used (a simple line). However, higher degrees can be used, by changing a few lines of code. This can be useful in closer curves paths.
 

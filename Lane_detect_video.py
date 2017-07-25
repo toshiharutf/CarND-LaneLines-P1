@@ -4,6 +4,7 @@ Created on Tue Jul 18 02:23:43 2017
 
 @author: Toshiharu
 """
+from timeit import default_timer as timer
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -262,5 +263,11 @@ white_output = 'test_videos_output/solidYellowLeft.mp4'
 clip1 = VideoFileClip("test_videos/solidYellowLeft.mp4")
 #clip1 = VideoFileClip("test_videos/solidWhiteRight.mp4")
 #    clip1 = VideoFileClip(videoInput)
+
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+
+start = timer()
 white_clip.write_videofile(white_output, audio=False)
+end = timer()
+
+print(end-start)
