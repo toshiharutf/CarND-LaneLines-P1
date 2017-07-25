@@ -72,8 +72,8 @@ The points found by the Hough Lines function are fed into the the polynomial fit
 ### Step 6: Drawing the identified lines over the original image  - function drawLines(image,leftCurve,rightCurve,verLim)
 
 Finally, the identified line equations are drawed over the original image. The inputs are the original input image, the left and right curve equation parameters *leftCurve* and *rightCurve* and the vertial limit *verLim*.
-Notice that the equations are defined as **x = f(y)**, because is more convenient in the image space frame.
-The identified lane lines are showed in red.
+Notice that the equations are defined as **x = f(y)**, because it is more convenient in the image space frame.
+The identified lane lines are shown in red.
 
 ![alt text](documentation_images/final_image.png)
 
