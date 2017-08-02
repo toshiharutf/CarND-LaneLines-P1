@@ -14,7 +14,7 @@ This funtion encapsulates the actual image processing pipeline of the project. I
 **Output:** Images with the identified lane lines overlaid.
 
 ### Step 1: Color filtering - function colorFilter(image, lowerColor, UpperColor)
-First, the input images is filtered by colors. The lane lines are tipically white or yellow, so these two colors parameters are preselected. However, the tone of these colors doesn't remain constant overtime, or even in the same picture frame, due to changing light conditions and camera parameters (like ISO). For that reason, for each these two colors, a pre-specified range of RGB values, defined in the **lowerColor** and **upperColor** variables.
+First, the input images is filtered by colors. The lane lines are tipically white or yellow, so these two colors parameters are preselected. However, the tone of these colors doesn't remain constant overtime, or even in the same picture frame, due to changing light conditions and camera parameters (like ISO). For that reason, for each these two colors, a pre-specified range of RGB values are defined in the **lowerColor** and **upperColor** variables.
 
 Let's start with the initial image.
 
@@ -58,7 +58,7 @@ The Hough algorithm transform the space of the image from X,Y cartesian coordina
 
 (image extracted from the opencv documentation)-
 
-The minimum number of intersections in order to define a line can be tuned with the *threshold* variable. The other variable define the resolution of the transformation, and the relation between multiple lines in the same figure. The output of this function is a tuple of vectors defined as **[x1 y1 x1 y2]** that indicates a detected line.
+The minimum number of intersections in order to define a line can be tuned with the *threshold* variable. The other variables define the resolution of the transformation, and the relation between multiple lines in the same figure. The output of this function is a tuple of vectors defined as **[x1 y1 x1 y2]** that indicates a detected line.
 
 **Note:** In this project, the canny edge detection is not used, since this algorithm reduces the number of available points for the Hough transformation function. If less points are avaible, the Hough line algorithm may have problems finding the lines. This can be problematic in cases were the quality image is not high enough to distinguish the lane lines, as in the challenge video (see image below), in which in some frames, the lanes on the right side are partially absent. The color filtering algorithm by itself make a good job at detecting the lanes, while leaving enough data points for the Hough algorithm.
 
@@ -84,7 +84,7 @@ In the current version, the filter's parameters have been manually tuned in orde
 
 Also, if the lane line painting quality is not adequate, or the size of the lanes are reduced in some parts of the road, as in the challenge video, the pipeline may turn unstable. Even though the current pipeline works in the challenge video, in some parts, the detected line "shakes" a little bit, because the information of the road is very limited. 
 
-See the image in the Hough algorithm part. *(is there a way to reference images in Markdown?)*
+See the image in the Hough algorithm part.
 In this case, only the lanes at the top can be used to determine the position of the line.
 
 Finally, the current pipeline only determines straigh lines, which may be inadequate at closer curves.
